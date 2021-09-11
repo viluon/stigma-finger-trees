@@ -1,0 +1,14 @@
+{
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "logprobs": null,
+      "text": "\ntemplate<typename A>\nclass Node {\n\ntemplate<typename A>\nclass Digit {\n\ntemplate<typename A>\nclass FingerTree {\n\ntemplate<typename A>\n\nclass Node {\n\ntemplate<typename A>\nclass Digit {\n\ntemplate<typename A>\nclass FingerTree {\n\ntemplate<typename A>\n\nclass Node {\n\ntemplate<typename A>\nclass Digit {\n\ntemplate<typename A>\nclass FingerTree {\n\ntemplate<"
+    }
+  ],
+  "created": 1631356510,
+  "id": "cmpl-3gudigvuTzFsYf108F9R4QnA4uKSW",
+  "model": "davinci:2020-05-03",
+  "object": "text_completion"
+}
