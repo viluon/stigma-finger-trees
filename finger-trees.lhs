@@ -21,8 +21,9 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{amsfonts}
+\usepackage{subcaption}
 \usepackage{tikz}
-\usetikzlibrary{arrows,cd,positioning,shapes,fit}
+\usetikzlibrary{arrows,cd,positioning,shapes,fit,trees}
 
 \tikzset{
 	encircle/.style = {draw, circle, inner sep = 0.5mm, color = red},
@@ -31,7 +32,9 @@
 	reflexive above/.style={->,loop,looseness=7,in=120,out=60},
 	reflexive below/.style={->,loop,looseness=7,in=240,out=300},
 	reflexive left/.style={->,loop,looseness=7,in=150,out=210},
-	reflexive right/.style={->,loop,looseness=7,in=30,out=330}
+	reflexive right/.style={->,loop,looseness=7,in=30,out=330},
+	treenode/.style = {draw, circle, align=center, inner sep=0.5pt, minimum size=4pt, text centered},
+	every node/.style={treenode},
 }
 
 \begin{document}
@@ -44,11 +47,156 @@
 %-------------------------------------------------------------------------------
 \thispagestyle{empty}
 
-\section*{Definitions}
+\section*{Data structures}
+
+
+\begin{figure}[h]
+    \centering
+
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \begin{tikzpicture}[
+            -,
+            >=stealth',
+            level distance = 12pt,
+            level/.style={sibling distance = 100pt/(#1*#1) + 20pt/#1 + 0pt},
+            level 3/.style={every node/.style={treenode, minimum size=10pt}, sibling distance=12pt},
+        ]
+        \node {}
+            child{ node {}
+                child{ node {}
+                    child{ node {t} }
+                    child{ node {h} }
+                }
+                child{ node {}
+                    child{ node {i} }
+                    child{ node {s} }
+                }
+                child{ node {}
+                    child{ node {i} }
+                    child{ node {s} }
+                }
+            }
+            child{ node {}
+                child{ node {}
+                    child{ node {n} }
+                    child{ node {o} }
+                    child{ node {t} }
+                }
+                child{ node {}
+                    child{ node {a} }
+                    child{ node {t} }
+                }
+                child{ node {}
+                    child{ node {r} }
+                    child{ node {e} }
+                    child{ node {e} }
+                }
+            }
+        ;
+        \end{tikzpicture}
+        \caption{A 2-3 tree with data stored in the leaves.}
+        \label{fig:two-three}
+    \end{subfigure}%
+    \begin{subfigure}{.5\textwidth}
+        \centering
+        \begin{tikzpicture}[
+            -,
+            >=stealth',
+            level distance = 12pt,
+            digit/.style={treenode, minimum size=10pt},
+        ]
+
+        % NODES
+
+        % spine
+        \node (deep0l) at (5,9) {};
+        \node (deep0r) at (6,9) {};
+
+        \node (deep1l) at (5.25,8) {};
+        \node (deep1r) at (5.75,8) {};
+
+        \node (empty)  at (5.5,7) {};
+
+
+        % first level
+        \node (node0l1) at (3,8) [digit] {t};
+        \node (node0l2) at (4,8) [digit] {h};
+
+        \node (node0r1) at (7,8) [digit] {r};
+        \node (node0r2) at (8,8) [digit] {e};
+        \node (node0r3) at (9,8) [digit] {e};
+
+
+        % second level
+        \node (node1l1) at (3,7) {};
+        \node (node1l2) at (4.35,7) {};
+
+        \node (node1r1) at (7.5,7) {};
+        \node (node1r2) at (9.3,7) {};
+
+
+        % third level
+        \node (nodenode1l11) at (2.5,6)  [digit] {i};
+        \node (nodenode1l12) at (3.25,6) [digit] {s};
+        \node (nodenode1l21) at (4,6)    [digit] {i};
+        \node (nodenode1l22) at (4.75,6) [digit] {s};
+
+        \node (nodenode1r11) at (6.75,6) [digit] {n};
+        \node (nodenode1r12) at (7.5,6)  [digit] {o};
+        \node (nodenode1r13) at (8.25,6) [digit] {t};
+        \node (nodenode1r21) at (9,6)    [digit] {a};
+        \node (nodenode1r22) at (9.75,6) [digit] {t};
+
+        % EDGES
+
+        % spine
+        \draw (deep0l) -- (deep1l);
+        \draw (deep0r) -- (deep1r);
+        \draw (deep1l) -- (empty);
+        \draw (deep1r) -- (empty);
+
+        % first level
+        \draw (deep0l) -- (node0l1);
+        \draw (deep0l) -- (node0l2);
+        \draw (deep0r) -- (node0r1);
+        \draw (deep0r) -- (node0r2);
+        \draw (deep0r) -- (node0r3);
+
+        % second level
+        \draw (deep1l) -- (node1l1);
+        \draw (deep1l) -- (node1l2);
+        \draw (deep1r) -- (node1r1);
+        \draw (deep1r) -- (node1r2);
+
+        % third level
+        \draw (node1l1) -- (nodenode1l11);
+        \draw (node1l1) -- (nodenode1l12);
+        \draw (node1l2) -- (nodenode1l21);
+        \draw (node1l2) -- (nodenode1l22);
+
+        \draw (node1r1) -- (nodenode1r11);
+        \draw (node1r1) -- (nodenode1r12);
+        \draw (node1r1) -- (nodenode1r13);
+        \draw (node1r2) -- (nodenode1r21);
+        \draw (node1r2) -- (nodenode1r22);
+        \end{tikzpicture}
+        \caption{A finger tree.}
+        \label{fig:finger-tree}
+    \end{subfigure}
+    \caption{Two trees of different types representing the string \texttt{thisisnotatree}.}
+\end{figure}
+
 \begin{code}
 data Node  a = Node2 a a | Node3 a a a
 data Tree  a = Zero a | Succ (Tree (Node a))
+
+data FingerTree a  =  Empty
+                   |  Single a
+                   |  Deep (Digit a) (FingerTree (Node a)) (Digit a)
+type Digit a = [a]
 \end{code}
+
 
 \section*{Theorems}
 
