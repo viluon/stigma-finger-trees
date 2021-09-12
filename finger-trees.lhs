@@ -4,10 +4,16 @@
 %                 Fill in seminar information
 %-------------------------------------------------------------------------------
 \lecturername{Ondřej Kvapil}
-\lectureremail{kvapiond@fit.cvut.cz}
+\lectureremail{kvapiond@@fit.cvut.cz}
 \papertitle{Finger trees: a simple general-purpose data structure}
 \paperauthors{Ralf Hinze, Ross Paterson}
 \paperlink{http://dx.doi.org/10.1017/S0956796805005769}
+
+% lhs2TeX
+%include polycode.fmt
+%include forall.fmt
+%include greek.fmt
+%include formatting.fmt
 
 %-------------------------------------------------------------------------------
 %                 Use custom packages
@@ -15,7 +21,6 @@
 \usepackage{enumitem}
 \usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{minted}
 \usepackage{tikz}
 \usetikzlibrary{arrows,cd,positioning,shapes,fit}
 
@@ -40,9 +45,10 @@
 \thispagestyle{empty}
 
 \section*{Definitions}
-\begin{minted}
-	data Tree a = Zero a | Succ (Tree (Node a))
-\end{minted}
+\begin{code}
+data Node  a = Node2 a a | Node3 a a a
+data Tree  a = Zero a | Succ (Tree (Node a))
+\end{code}
 
 \section*{Theorems}
 

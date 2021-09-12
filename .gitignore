@@ -1,3 +1,5 @@
+finger-trees.tex
+
 *.pdf
 *.synctex.gz
 *.synctex(busy)
@@ -29,4 +31,5 @@
 *.bcf
 *.lol
 *.mw
+*.ptb
 _minted-*/
