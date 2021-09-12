@@ -37,6 +37,46 @@
 	every node/.style={treenode},
 }
 
+\let\svthefootnote\thefootnote
+\newcommand\blankfootnote[1]{%
+  \let\thefootnote\relax\footnotetext{#1}%
+  \let\thefootnote\svthefootnote%
+}
+\let\svfootnote\footnote
+\renewcommand\footnote[2][?]{%
+  \if\relax#1\relax%
+    \blankfootnote{#2}%
+  \else%
+    \if?#1\svfootnote{#2}\else\svfootnote[#1]{#2}\fi%
+  \fi
+}
+\newcommand{\rrowar}{%
+  {\scriptscriptstyle%
+  \mathbin{%
+    >
+    \mathrel{\mkern-5mu}%
+    \mathrel{-}%
+  }}%
+}
+\newcommand{\rrowal}{%
+  {\scriptscriptstyle%
+  \mathbin{%
+    \mathrel{-}
+    \mathrel{\mkern-5mu}%
+    <%
+  }}%
+}
+%  ⤙   leftwards  arrow tail 
+%  𝈄   Greek vocal notation symbol-5 
+%  𝈠   Greek instrumental notation symbol-5 
+%  ⤚   Rightwards arrow-tail 
+%  ᚛   Ogham feather mark
+\DeclareUnicodeCharacter{1D204}{\ensuremath{\rrowal}}
+\DeclareUnicodeCharacter{1D220}{\ensuremath{\rrowar}}
+
+% for hiding code from the document
+\long\def\ignore#1{}
+
 \begin{document}
 %-------------------------------------------------------------------------------
 %                 Print seminar header
@@ -47,8 +87,14 @@
 %-------------------------------------------------------------------------------
 \thispagestyle{empty}
 
-\section*{Data structures}
+\ignore{
+\begin{code}
+import Prelude hiding (Monoid, mappend, mempty)
+\end{code}}
 
+\section*{Data structures}
+\footnote[]{This file is literate Haskell, source available at
+\url{https://github.com/viluon/stigma-finger-trees}}
 
 \begin{figure}[h]
     \centering
@@ -197,7 +243,38 @@ data FingerTree a  =  Empty
 type Digit a = [a]
 \end{code}
 
+\section*{Type classes}
 
-\section*{Theorems}
+%format mempty = "\emptyset"
+%format `mappend` = "\oplus"
+%format mappend = "(\oplus)"
+
+%format rdr = "(\rrowal)"
+%format rdl = "(\rrowar)"
+
+\begin{code}
+class Monoid a where
+  mempty   :: a
+  mappend  :: a -> a -> a
+
+instance Monoid [a] where
+  mempty   = []
+  mappend  = (++)
+
+x = [] `mappend` []
+
+foo :: [a]
+foo = mempty
+
+class Reduce f where
+  reducer  :: (a -> b -> b) -> (f a -> b   -> b)
+  reducel  :: (b -> a -> b) -> (b   -> f a -> b)
+
+instance Reduce [] where
+  reducer  rdr x z = foldr  rdr z x
+  reducel  rdl x z = foldl  rdl x z
+\end{code}
+
+\section*{Algorithms}
 
 \end{document}
