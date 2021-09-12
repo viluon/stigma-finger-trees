@@ -15,6 +15,22 @@
 %include greek.fmt
 %include formatting.fmt
 
+
+%format `rdr''` = "~\rrowal''''~"
+%format `rdl''` = "~\rrowar''''~"
+%format rdr'' = "(\rrowal'''')"
+%format rdl'' = "(\rrowar'''')"
+
+%format `rdr'` = "~\rrowal''~"
+%format `rdl'` = "~\rrowar''~"
+%format rdr' = "(\rrowal'')"
+%format rdl' = "(\rrowar'')"
+
+%format `rdr` = "~\rrowal~"
+%format `rdl` = "~\rrowar~"
+%format rdr = "(\rrowal)"
+%format rdl = "(\rrowar)"
+
 %-------------------------------------------------------------------------------
 %                 Use custom packages
 %-------------------------------------------------------------------------------
@@ -23,7 +39,7 @@
 \usepackage{amsfonts}
 \usepackage{subcaption}
 \usepackage{tikz}
-\usetikzlibrary{arrows,cd,positioning,shapes,fit,trees}
+\usetikzlibrary{shapes.misc,arrows,cd,positioning,shapes,fit,trees}
 
 \tikzset{
 	encircle/.style = {draw, circle, inner sep = 0.5mm, color = red},
@@ -36,6 +52,8 @@
 	treenode/.style = {draw, circle, align=center, inner sep=0.5pt, minimum size=4pt, text centered},
 	every node/.style={treenode},
 }
+
+\definecolor{ts-red}{HTML}{DC3522}
 
 \let\svthefootnote\thefootnote
 \newcommand\blankfootnote[1]{%
@@ -87,6 +105,10 @@
 %-------------------------------------------------------------------------------
 \thispagestyle{empty}
 
+% spec environment to typeset, but hide from the compiler
+% \ignore command to pass to the compiler but not typeset
+% code environment to typeset and pass to the compiler
+
 \ignore{
 \begin{code}
 import Prelude hiding (Monoid, mappend, mempty)
@@ -94,7 +116,7 @@ import Prelude hiding (Monoid, mappend, mempty)
 
 \section*{Data structures}
 \footnote[]{This file is literate Haskell, source available at
-\url{https://github.com/viluon/stigma-finger-trees}}
+\url{https://github.com/viluon/stigma-finger-trees}.}
 
 \begin{figure}[h]
     \centering
@@ -163,6 +185,19 @@ import Prelude hiding (Monoid, mappend, mempty)
         \node (deep1r) at (5.75,8) {};
 
         \node (empty)  at (5.5,7) {};
+
+        \node [
+            rounded rectangle, inner sep = 2pt,
+            fit = (deep0l) (deep0r), color = ts-red
+        ] (spinelayer0) {};
+        \node [
+            rounded rectangle, inner sep = 2pt,
+            fit = (deep1l) (deep1r), color = ts-red
+        ] (spinelayer1) {};
+        \node [
+            rounded rectangle, inner sep = 2pt,
+            fit = (empty), color = ts-red
+        ] (spinelayer2) {};
 
 
         % first level
@@ -249,32 +284,51 @@ type Digit a = [a]
 %format `mappend` = "\oplus"
 %format mappend = "(\oplus)"
 
-%format rdr = "(\rrowal)"
-%format rdl = "(\rrowar)"
-
+\begin{minipage}[c]{0.45\linewidth}
 \begin{code}
 class Monoid a where
   mempty   :: a
   mappend  :: a -> a -> a
 
-instance Monoid [a] where
-  mempty   = []
-  mappend  = (++)
-
-x = [] `mappend` []
-
-foo :: [a]
-foo = mempty
-
 class Reduce f where
   reducer  :: (a -> b -> b) -> (f a -> b   -> b)
   reducel  :: (b -> a -> b) -> (b   -> f a -> b)
+\end{code}
+\end{minipage}
+\begin{minipage}[c]{0.45\linewidth}
+\begin{code}
+instance Monoid [a] where
+  mempty   = []
+  mappend  = (++)
 
 instance Reduce [] where
   reducer  rdr x z = foldr  rdr z x
   reducel  rdl x z = foldl  rdl x z
 \end{code}
+\end{minipage}
 
 \section*{Algorithms}
+
+\begin{code}
+instance Reduce Node where
+  reducer  rdr (Node2 a b)    z  = a `rdr` (b `rdr` z)
+  reducer  rdr (Node3 a b c)  z  = a `rdr` (b `rdr` (c `rdr` z))
+
+  reducel  rdl z (Node2 a b)     = (z `rdl` a) `rdl` b
+  reducel  rdl z (Node3 a b c)   = ((z `rdl` a) `rdl` b) `rdl` c
+
+instance Reduce FingerTree where
+  reducer  rdr Empty           z = z
+  reducer  rdr (Single x)      z = x `rdr` z
+  reducer  rdr (Deep pr m sf)  z = pr `rdr'` (m `rdr''` (sf `rdr'` z))
+    where  rdr'   = reducer rdr
+           rdr''  = reducer (reducer rdr)
+
+  reducel  rdl z Empty           = z
+  reducel  rdl z (Single x)      = z `rdl` x
+  reducel  rdl z (Deep pr m sf)  = ((z `rdl'` pr) `rdl''` m) `rdl'` sf
+    where  rdl'   = reducel rdl
+           rdl''  = reducel (reducel rdl)
+\end{code}
 
 \end{document}
