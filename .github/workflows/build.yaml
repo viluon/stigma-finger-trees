@@ -1,0 +1,24 @@
+name: typeset literate Haskell
+on: [push]
+jobs:
+  build_latex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: set up Git repository
+        uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt update
+          sudo apt install cabal-install texlive-full
+          cabal update
+          cabal install lhs2tex
+          export PATH="$PATH:$HOME/.cabal/bin/"
+          make
+      - name: release new PDF version
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: false
+          files: |
+            finger-trees.pdf
