@@ -290,6 +290,7 @@ data Split f a = Split (f a) a (f a)
 %format mappend = "(\oplus)"
 
 %format measure a = "||" a "||"
+%format measure (a) = "||" a "||"
 
 \vspace{-15pt}
 \begin{minipage}[c]{0.45\linewidth}
@@ -384,6 +385,47 @@ instance Reduce FingerTree where
   reducel  rdl z (Deep pr m sf)  = ((z `rdl'` pr) `rdl''` m) `rdl'` sf
     where  rdl'   = reducel rdl
            rdl''  = reducel (reducel rdl)
+\end{code}
+
+\section*{Applications}
+
+\vspace{-15pt}
+
+%format Nat = "\mathbb{N}"
+
+\ignore{
+\begin{code}
+type Nat = Int
+\end{code}
+}
+
+\begin{code}
+newtype Size =  Size {getSize :: Nat}
+                deriving (Eq, Ord)
+
+instance Monoid Size where
+  mempty                   = Size 0
+  Size m `mappend` Size n  = Size (m + n)
+
+newtype Elem  a = Elem {getElem :: a}
+newtype Seq   a = Seq (FingerTree {-"\fade{Size}"-} (Elem a))
+
+instance Measured (Elem a) Size where
+  measure (Elem _) = Size 1
+\end{code}
+
+\begin{code}
+data Prio a =  MInfty | Prio a
+               deriving (Eq, Ord)
+newtype PQueue a = PQueue (FingerTree {-"\fade{(Prio~a)}"-} (Elem a))
+instance (Ord a) => Monoid (Prio a) where
+  mempty                    = MInfty
+  MInfty  `mappend` p       = p
+  p       `mappend` MInfty  = p
+  Prio m  `mappend` Prio n  = Prio (m `max` n)
+
+instance (Ord a) => Measured (Elem a) (Prio a) where
+  measure (Elem x) = Prio x
 \end{code}
 
 \end{document}
