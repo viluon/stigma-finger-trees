@@ -111,6 +111,7 @@
 
 \ignore{
 \begin{code}
+{-# LANGUAGE MultiParamTypeClasses #-}
 import Prelude hiding (Monoid, mappend, mempty)
 \end{code}}
 
@@ -118,6 +119,7 @@ import Prelude hiding (Monoid, mappend, mempty)
 \footnote[]{This file is literate Haskell, source available at
 \url{https://github.com/viluon/stigma-finger-trees}.}
 
+\vspace{-20pt}
 \begin{figure}[h]
     \centering
 
@@ -268,15 +270,18 @@ import Prelude hiding (Monoid, mappend, mempty)
     \caption{Two trees of different types representing the string \texttt{thisisnotatree}.}
 \end{figure}
 
+\newcommand\fade[1]{{\color{gray}{#1}~}}
 \begin{code}
-data Node  a = Node2 a a | Node3 a a a
-data Tree  a = Zero a | Succ (Tree (Node a))
+data Node  {-"\fade{v}"-} a = Node2 {-"\fade{v}"-} a a | Node3 {-"\fade{v}"-} a a a
+data Tree  {-"\fade{v}"-} a = Zero a | Succ (Tree (Node {-"\fade{v}"-} a))
 
-data FingerTree a  =  Empty
-                   |  Single a
-                   |  Deep (Digit a) (FingerTree (Node a)) (Digit a)
+data FingerTree {-"\fade{v}"-} a  =  Empty
+                                  |  Single a
+                                  |  Deep {-"\fade{v}"-} (Digit a) (FingerTree {-"\fade{v}"-} (Node {-"\fade{v}"-} a)) (Digit a)
 type Digit a = [a]
+data Split f a = Split (f a) a (f a)
 \end{code}
+
 
 \section*{Type classes}
 
@@ -284,6 +289,9 @@ type Digit a = [a]
 %format `mappend` = "\oplus"
 %format mappend = "(\oplus)"
 
+%format measure a = "||" a "||"
+
+\vspace{-15pt}
 \begin{minipage}[c]{0.45\linewidth}
 \begin{code}
 class Monoid a where
@@ -307,7 +315,54 @@ instance Reduce [] where
 \end{code}
 \end{minipage}
 
+\begin{code}
+class Monoid v => Measured a v where
+  measure :: a -> v
+\end{code}
+
 \section*{Algorithms}
+
+\ignore{
+\begin{code}
+infixr 5 <|
+(<|)                         :: a -> FingerTree a -> FingerTree a
+a <| Empty                   = Single a
+a <| Single b                = Deep [a] Empty [b]
+a <| Deep [b, c, d, e] m sf  = Deep [a, b] (Node3 c d e <| m) sf
+a <| Deep pr m sf            = Deep (a:pr) m sf
+
+lhd' :: Reduce f => f a -> FingerTree a -> FingerTree a
+lhd' = reducer (<|)
+
+toTree :: Reduce f => f a -> FingerTree a
+toTree s = s `lhd'` Empty
+\end{code}
+}
+
+\vspace{-15pt}
+\begin{code}
+splitTree :: (Measured a v) => (v -> Bool) -> v -> FingerTree {-"\fade{v}"-} a -> Split (FingerTree {-"~\fade{v}\hspace{ -3pt}"-}) a
+splitTree p i (Single x) = Split Empty x Empty
+splitTree p i (Deep {-"\fade{\_}"-} pr m sf)
+  | p vpr      =  let  Split l x r     = splitDigit p i pr
+                  in   Split (toTree l) x (deepl r m sf)
+  | p vm       =  let  Split ml xs mr  = splitTree p vpr m
+                       Split l x r     = splitDigit p (vpr `mappend` measure ml) (toList xs)
+                  in   Split (deepr pr ml l) x (deepl r mr sf)
+  | otherwise  =  let  Split l x r     = splitDigit p vm sf
+                  in   Split (deepr pr m l) x (toTree r)
+  where  vpr  = i    `mappend` measure pr
+         vm   = vpr  `mappend` measure m
+
+{-"\\"-}
+
+splitDigit :: (Measured a v) => (v -> Bool) -> v -> Digit a -> Split [] a
+splitDigit p i [a]  = Split [] a []
+splitDigit p i (a:as)
+  | p i'            = Split [] a as
+  | otherwise       = let Split l x r = splitDigit p i' as in Split (a:l) x r
+  where i' = i `mappend` measure a
+\end{code}
 
 \begin{code}
 instance Reduce Node where
