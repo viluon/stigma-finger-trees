@@ -69,20 +69,20 @@
   \fi
 }
 \newcommand{\rrowar}{%
-  {\scriptscriptstyle%
+  \raise1.2pt\hbox{${\scriptscriptstyle%
   \mathbin{%
-    >
+    \rangle
     \mathrel{\mkern-5mu}%
     \mathrel{-}%
-  }}%
+  }}$}%
 }
 \newcommand{\rrowal}{%
-  {\scriptscriptstyle%
+  \raise1.2pt\hbox{${\scriptscriptstyle%
   \mathbin{%
     \mathrel{-}
     \mathrel{\mkern-5mu}%
-    <%
-  }}%
+    \langle%
+  }}$}%
 }
 %  ⤙   leftwards  arrow tail 
 %  𝈄   Greek vocal notation symbol-5 
@@ -339,6 +339,9 @@ toTree :: Reduce f => f a -> FingerTree a
 toTree s = s `lhd'` Empty
 \end{code}
 }
+
+%format deepl = "deep_L"
+%format deepr = "deep_R"
 
 \vspace{-15pt}
 \begin{code}

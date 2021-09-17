@@ -1,0 +1,200 @@
+\documentclass[a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[english]{babel}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{tcolorbox}
+\usepackage[makeroom]{cancel}
+\usepackage{mathpartir}
+\usepackage{geometry}
+\usepackage{enumitem}
+
+% figure support
+\usepackage{import}
+\usepackage{xifthen}
+\pdfminorversion=7
+\usepackage{pdfpages}
+\usepackage{transparent}
+\newcommand{\incfig}[1]{%
+	\def\svgwidth{\columnwidth}
+	\import{./figures/}{#1.pdf_tex}
+}
+
+% style for tcolorboxes
+\tcbset{plain/.style={colbacktitle=white,coltitle=black,colback=white}}
+\pdfsuppresswarningpagegroup=1
+
+% layout (taken from ./fit-teorsem.cls)
+\geometry{left=2.0cm, top=1.5cm, right=2.0cm, bottom=1.5cm, footskip=0cm}
+
+\begin{document}
+
+\subsection*{Summary by page}
+\begin{enumerate}[nosep]
+	\item abs
+	\item monoids, reductions
+	\item simple sequences, 2-3 trees
+	\item finger trees, digits
+	\item (p 5) finger tree reductions, deque operations
+		\begin{itemize}
+			\item the sequence of $n$ elements is represented by a tree of
+				depth $\Theta(\log n)$, an element $d$ positions from the
+				nearest end is stored at a depth of $\Theta(\log d)$
+			\item efficient deques with all operations taking $\Theta(1)$
+				amortized time, even as a persistent data structure
+			\item adding to the left: if digit contains 4 elements, push 3 as a
+				node, leave 2 behind (non-schematic recursion)
+		\end{itemize}
+	\item deque operations (cont.), views
+		\begin{itemize}
+			\item $a \triangleleft tree$, $tree \triangleright a$
+			\item conversion to a tree relies on $Reduce$, lifting $\triangleleft$
+			\item deconstruction: \texttt{data View\_L s a = Nil\_L | Cons\_L a (s a)}
+			\item head in constant time, tail may be empty -- smart deep
+				constructor uses a view (recursively) to construct the middle
+				tree of the correct shape
+		\end{itemize}
+	\item analysis with laziness, required suspensions
+		\begin{itemize}
+			\item rely on laziness to provide $\mathit{isEmpty, head_L,
+				tail_L}$ via $\mathit{View_L}$.
+			\item each op may recurse down the spine, taking $\Theta(\log n)$ time
+			\item $\Theta(1)$ amortized time:
+				\begin{itemize}
+					\item digits of 2 or 3 elements (isomorphic to \textit{Node
+						a}) are \textbf{safe}
+					\item of 1 or 4 elements are \textbf{dangerous}
+					\item op propagates due to a dangerous digit, making it
+						safe.
+					\item at most half ops descend one lvl, at most quarter
+						descend 2 lvls
+					\item in a sequence of ops, amortized cost is constant
+				\end{itemize}
+			\item this holds in a persistent setting if subtrees are suspended:
+				transformations deep in the spine do not take place until a
+				subsequent op needs to descend that far.
+			\item more formally:
+				\begin{enumerate}
+					\item assign the suspension of the middle tree in each
+						\textit{Deep} node as many debits as the node has safe
+						digits (0, 1 or 2)
+					\item op that descends $k$ levels turns $k$ dangerous
+						digits into safe ones, withdrawing $k$ debits to pay
+						for the work
+					\item debit passing (?) -- each operation discharges at
+						most one debit
+				\end{enumerate}
+			\item suspensions are only useful (but critical) for the middle
+				trees of \textit{Deep} nodes
+		\end{itemize}
+	\item concatentation (\textit{app3, nodes})
+		\begin{itemize}
+			\item only difficult case is for two \textit{Deep} nodes
+			\item prefix and suffix is clear, combine the rest using
+				\textit{app3}
+
+				(type $\mathit{FingerTree~a \rightarrow [a]
+				\rightarrow FingerTree~a \rightarrow FingerTree~a}$)
+		\end{itemize}
+	\item concatenation (cont.), annotated sequences (measurements)
+		\begin{itemize}
+			\item concatenation is just \textit{app3} with fewer steps:
+				$\mathit{xs \bowtie ys = app3~xs~[~]~ys}$
+			\item each invocation of $\mathit{app3}$ takes a list of at most 4
+				elements, so it takes $\Theta(1)$ time -- note that \textit{a}s
+				are combined into \textit{Node a}s, \textit{Node a}s into
+				\textit{Node (Node a)}s, and so on, \textit{nodes} prefers the
+				\textit{Node3} constructor
+			\item recursion terminates at the bottom of the shallower tree (up
+				to 4 insertions once recursion bottoms out (see the list length
+				argument above))
+			\item debit analysis remains valid, because while $\bowtie$
+				discharges debits on the nodes of the spines that are merged,
+				there will be at most $\Theta(\log(\min\{n_1, n_2\}))$ of those
+			\item measurements, many-to-many relation on types
+		\end{itemize}
+	\item (p 10) annotated sequences (cont.), caching measurements
+		\begin{itemize}
+			\item measures must be cheap: support measures with a bounded
+				number of $\oplus$ operations by saving intermediate results in
+				nodes
+			\item authors' note: measures of digits are bounded by their
+				length, we could instead trade time for space and cache in
+				digits. Doesn't change asymptotes, but tweaks the constant
+				factors of query vs modification operations
+		\end{itemize}
+	\item construction, deconstruction, concatenation, splitting
+		\begin{itemize}
+			\item it suffices to cache in \textit{Deep} nodes
+			\item all deque things adapt trivially
+			\item \textit{scan}: iterated reduction mapping $x_1, \ldots, x_n$
+				to $v_1, \ldots, v_n$ (seq. of accumulated measurements) where
+				$v_j = i \oplus || x_1 || \oplus \cdots \oplus || x_j ||$
+		\end{itemize}
+	\item splitting (cont.)
+		\begin{itemize}
+			\item \texttt{data Split f a = Split (f a) a (f a)}, similar to
+				fingers in imperative and zippers in functional settings (also
+				one-hole contexts)
+			\item the condition for \textit{splitTree} is pretty
+				straightforward, the \texttt{let ... in} body should use
+				$\equiv$ in place of $=$, the whole thing could become a
+				QuickCheck property
+			\item section 4.7 uses monotonic predicates or some shit
+		\end{itemize}
+	\item splitting (cont.)
+		\begin{itemize}
+			\item \textit{splitDigit} also works only for non-empty digits
+			\item \textit{splitDigit} splits at the first point where $p$
+				flips, while \textit{splitTree} can skip entire subtrees --
+				necessary for making \textit{splitTree} run in logarithmic
+				time, gives no guarantee that the calculated split is the first
+				one (consider subtree down below which flips the predicate at
+				the start but then flips it back -- the flippery won't
+				propagate to the top level)
+			\item cost of \textit{splitTree} proportional to the depth of the
+				split point, i.e. $\Theta(\log(\min\{n_l, n_r\}))$ '$\oplus$'
+				operations
+			\item argument about debit analysis same as with $\bowtie$
+			\item strengthening of the \textit{splitTree} spec: empty middle
+				subtree of a deep node is not passed to a recursive call,
+				'cause in that case $vm = vpr$ (so the middle equation cannot
+				match)
+		\end{itemize}
+	\item splitting (finished), applications -- random access sequences
+		\begin{itemize}
+			\item skip the part about \textit{split} (implemented in terms of
+				\textit{splitTree})?
+			\item random access sequences
+		\end{itemize}
+	\item (p 15) applications (cont.) -- max-priority queues
+		\begin{itemize}
+			\item random access: length in constant time, \textit{splitAt} via
+				$(i <)$, indexing with a split (again via $(i <)$) using
+				$(Size~0)$ as the initializer for the running sum
+			\item max-priority queues: max operation might not have an
+				identity, fix that with negative infinity, elements in the
+				finger tree aren't ordered, the monoid picks them out and
+				carries them through the cache fields
+		\end{itemize}
+	\item applications (cont.) -- ordered sequences
+		\begin{itemize}
+			\item ordered sequences (monotonic predicates here?): annotations
+				keep the last key in the subtree
+		\end{itemize}
+	\item ordered sequences (cont.)
+	\item applications (cont.) -- interval trees
+	\item conclusion
+	\item (p 20) performance comparison
+\end{enumerate}
+
+todos:
+\begin{itemize}
+	\item comparison to Okasaki's results? (improvements?)
+	\item Okasaki \textit{debit passing} (p 7 in fulltext)
+	\item take a look at the performance comparisons
+\end{itemize}
+
+\end{document}
